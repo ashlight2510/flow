@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Flow — 글은 흐르고, 판은 남는다</title>
+
+    <!-- ✅ SEO / OG / Twitter / Canonical (도메인만 교체) -->
+    <meta
+      name="description"
+      content="Threads처럼 가볍게 쓰고, DC처럼 주제로 모인다. 익명 피드 + 판(갤러리) 하이브리드."
+    />
+    <meta
+      name="keywords"
+      content="익명 커뮤니티, 게시판, 갤러리, 스레드, 피드, DC, Threads, 익명 글, 익명 댓글"
+    />
+    <meta name="author" content="FunnyFunny" />
+    <link rel="canonical" href="https://your-domain.example/" />
+
+    <meta property="og:title" content="Flow — 글은 흐르고, 판은 남는다" />
+    <meta
+      property="og:description"
+      content="익명 피드 + 주제형 판(갤러리). 살아있는 판만 뜬다."
+    />
+    <!-- ✅ OG 이미지는 dummyimage.com 사용(요청 메모 반영) -->
+    <meta
+      property="og:image"
+      content="https://dummyimage.com/1200x630/0b1220/ffffff&text=PANFEED"
+    />
+    <meta property="og:image:alt" content="PANFEED" />
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Flow — 글은 흐르고, 판은 남는다" />
+    <meta
+      name="twitter:description"
+      content="익명 피드 + 주제형 판(갤러리). 살아있는 판만 뜬다."
+    />
+    <meta
+      name="twitter:image"
+      content="https://dummyimage.com/1200x630/0b1220/ffffff&text=FLOW"
+    />
+
+    <!-- ✅ Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%8C%8A%3C/text%3E%3C/svg%3E"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Supabase JS v2 (UMD) -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        background: radial-gradient(
+            1200px 600px at 20% 0%,
+            rgba(56, 189, 248, 0.12),
+            transparent 50%
+          ),
+          radial-gradient(
+            900px 500px at 80% 20%,
+            rgba(244, 114, 182, 0.1),
+            transparent 50%
+          ),
+          #050814;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .soft {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      .tap {
+        transition: transform 120ms ease, opacity 120ms ease;
+      }
+      .tap:active {
+        transform: scale(0.99);
+        opacity: 0.92;
+      }
+      .skeleton {
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.45;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen text-slate-100">
+    <!-- Top bar -->
+    <header
+      class="sticky top-0 z-40 backdrop-blur-xl bg-black/20 border-b border-white/10"
+    >
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+        <a
+          href="#/"
+          class="tap inline-flex items-center gap-2 font-black tracking-tight"
+        >
+          <span class="text-xl">🌊</span>
+          <span class="text-lg">Flow</span>
+          <span
+            class="text-xs font-semibold px-2 py-1 rounded-full bg-white/10 border border-white/10"
+            >익명</span
+          >
+        </a>
+
+        <div class="ml-auto flex items-center gap-2">
+          <!-- ✅ 다른 서비스 보기 버튼(기본 포함) -->
+          <a
+            id="moreServicesBtn"
+            href="https://funnyfunny.cloud/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="tap hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+          >
+            <span>다른 서비스 보기</span>
+            <span class="opacity-70">↗</span>
+          </a>
+
+          <button
+            id="openComposeBtn"
+            class="tap inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25"
+          >
+            ✍️ 글쓰기
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6">
+      <!-- Status row -->
+      <section
+        class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
+      >
+        <div class="glass soft rounded-2xl p-4 flex-1">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm text-slate-300">글은 흐르고, 판은 남는다</p>
+              <h1 class="text-xl font-extrabold tracking-tight">
+                Threads 감성 + DC 판 문화
+              </h1>
+            </div>
+            <div class="hidden sm:flex items-center gap-2">
+              <span
+                id="anonBadge"
+                class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10"
+                >anon: -</span
+              >
+              <button
+                id="copyAnonBtn"
+                class="tap text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/15"
+              >
+                ID 복사
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              data-tab="home"
+              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            >
+              🏠 피드
+            </button>
+            <button
+              data-tab="boards"
+              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            >
+              🧩 살아있는 판
+            </button>
+            <button
+              data-tab="new-board"
+              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            >
+              ➕ 판 만들기
+            </button>
+            <button
+              id="refreshBtn"
+              class="tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            >
+              새로고침
+            </button>
+          </div>
+
+          <p class="mt-3 text-xs text-slate-400 leading-relaxed">
+            ✅ 계정 없음 · 익명 · 주제(판) 중심 · 24시간 무활동 판은 숨김(운영
+            정책에 따라 조정).
+          </p>
+        </div>
+
+        <!-- Right info card -->
+        <div class="glass soft rounded-2xl p-4 sm:w-[320px]">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-slate-300">오늘의 흐름</p>
+            <span
+              class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10"
+              >MVP</span
+            >
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+            <div class="rounded-xl bg-white/5 border border-white/10 p-2">
+              <div id="statBoards" class="text-lg font-extrabold">-</div>
+              <div class="text-xs text-slate-400">판</div>
+            </div>
+            <div class="rounded-xl bg-white/5 border border-white/10 p-2">
+              <div id="statPosts" class="text-lg font-extrabold">-</div>
+              <div class="text-xs text-slate-400">글</div>
+            </div>
+            <div class="rounded-xl bg-white/5 border border-white/10 p-2">
+              <div id="statComments" class="text-lg font-extrabold">-</div>
+              <div class="text-xs text-slate-400">댓글</div>
+            </div>
+          </div>
+
+          <div class="mt-3 text-xs text-slate-400">
+            <p class="leading-relaxed">
+              글 카드에서
+              <span class="text-slate-200 font-semibold">공감</span>은 1인 1회,
+              <span class="text-slate-200 font-semibold">판</span>을 눌러
+              주제방으로 이동.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Router outlet -->
+      <section id="view" class="mt-5"></section>
+
+      <!-- Footer -->
+      <footer class="mt-10 pb-10 text-center text-xs text-slate-500">
+        <p>© FunnyFunny · 익명 기반 MVP · 문의/운영은 추후 연결</p>
+      </footer>
+    </main>
+
+    <!-- Compose Modal -->
+    <div id="composeModal" class="fixed inset-0 z-50 hidden">
+      <div class="absolute inset-0 bg-black/60"></div>
+      <div
+        class="absolute inset-0 flex items-end sm:items-center justify-center p-4"
+      >
+        <div class="glass soft w-full max-w-2xl rounded-2xl overflow-hidden">
+          <div
+            class="p-4 border-b border-white/10 flex items-center justify-between"
+          >
+            <div>
+              <h3 class="text-lg font-extrabold">✍️ 글쓰기</h3>
+              <p class="text-xs text-slate-400">판을 고르고, 한 번에 툭.</p>
+            </div>
+            <button
+              id="closeComposeBtn"
+              class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            >
+              닫기
+            </button>
+          </div>
+
+          <div class="p-4 space-y-3">
+            <div class="grid sm:grid-cols-2 gap-3">
+              <label class="block">
+                <span class="text-xs text-slate-400">닉네임(선택)</span>
+                <input
+                  id="composeName"
+                  maxlength="20"
+                  placeholder="익명"
+                  class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
+                />
+              </label>
+
+              <label class="block">
+                <span class="text-xs text-slate-400">판 선택</span>
+                <select
+                  id="composeBoard"
+                  class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
+                >
+                  <option value="">불러오는 중...</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="block">
+              <span class="text-xs text-slate-400">본문</span>
+              <textarea
+                id="composeBody"
+                rows="5"
+                maxlength="8000"
+                placeholder="요즘 드는 생각 한 줄…"
+                class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
+              ></textarea>
+              <div class="mt-1 flex justify-between text-xs text-slate-500">
+                <span id="composeHint">쿨타임: 글 20초</span>
+                <span id="composeCount">0/8000</span>
+              </div>
+            </label>
+
+            <div class="flex items-center justify-end gap-2">
+              <button
+                id="goNewBoardBtn"
+                class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+              >
+                판 먼저 만들기
+              </button>
+              <button
+                id="submitPostBtn"
+                class="tap px-4 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold"
+              >
+                게시
+              </button>
+            </div>
+
+            <p id="composeError" class="hidden text-xs text-rose-300"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /**
+       * ============================
+       * ✅ 0) Supabase 연결 정보 넣기
+       * ============================
+       * Supabase 대시보드 → Settings → API
+       * - Project URL
+       * - anon public key
+       */
+      const SUPABASE_URL = "https://vpezjsuzwmeozaytcqyv.supabase.co";
+      const SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+
+      /**
+       * ⚠️ 보안:
+       * - 이 MVP는 RLS에서 INSERT를 공개로 열어둔 버전(A) 기준.
+       * - 운영형(B)은 Edge Function으로 쓰기만 처리 추천.
+       */
+      const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      /**
+       * ============================
+       * ✅ 1) 익명ID / 쿨타임
+       * ============================
+       */
+      const LS_ANON = "panfeed_anon_id";
+      const LS_NAME = "panfeed_last_name";
+      const LS_COOLDOWN_POST = "panfeed_cd_post";
+      const LS_COOLDOWN_COMMENT = "panfeed_cd_comment";
+
+      function getAnonId() {
+        let v = localStorage.getItem(LS_ANON);
+        if (!v) {
+          v =
+            crypto?.randomUUID?.() ||
+            Date.now() + "-" + Math.random().toString(16).slice(2);
+          localStorage.setItem(LS_ANON, v);
+        }
+        return v;
+      }
+      function setLastName(name) {
+        if (!name) return;
+        localStorage.setItem(LS_NAME, name.slice(0, 20));
+      }
+      function getLastName() {
+        return localStorage.getItem(LS_NAME) || "";
+      }
+      function nowMs() {
+        return Date.now();
+      }
+
+      function inCooldown(key, ms) {
+        const until = Number(localStorage.getItem(key) || "0");
+        return nowMs() < until;
+      }
+      function setCooldown(key, ms) {
+        localStorage.setItem(key, String(nowMs() + ms));
+      }
+      function msLeft(key) {
+        const until = Number(localStorage.getItem(key) || "0");
+        return Math.max(0, until - nowMs());
+      }
+
+      const anonId = getAnonId();
+
+      /**
+       * ============================
+       * ✅ 2) DOM helpers
+       * ============================
+       */
+      const $ = (sel) => document.querySelector(sel);
+      const viewEl = $("#view");
+
+      function esc(s) {
+        return String(s ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+      function timeAgo(iso) {
+        const t = new Date(iso).getTime();
+        const diff = Math.max(0, Date.now() - t);
+        const m = Math.floor(diff / 60000);
+        if (m < 1) return "방금";
+        if (m < 60) return `${m}분 전`;
+        const h = Math.floor(m / 60);
+        if (h < 24) return `${h}시간 전`;
+        const d = Math.floor(h / 24);
+        return `${d}일 전`;
+      }
+      function seedImg(seed) {
+        // ✅ 본문 더미 이미지는 picsum 사용(영문/숫자 seed)
+        const s = encodeURIComponent(
+          String(seed).replace(/[^a-z0-9-]/gi, "seed")
+        );
+        return `https://picsum.photos/seed/${s}/1200/700`;
+      }
+
+      /**
+       * ============================
+       * ✅ 3) 라우팅
+       * ============================
+       */
+      function parseHash() {
+        const h = (location.hash || "#/").slice(1);
+        const parts = h.split("/").filter(Boolean);
+        return parts;
+      }
+
+      function nav(path) {
+        location.hash = path.startsWith("#") ? path : "#" + path;
+      }
+
+      $("#refreshBtn").addEventListener("click", () => render());
+
+      document.querySelectorAll(".tabBtn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const tab = btn.dataset.tab;
+          if (tab === "home") nav("/");
+          if (tab === "boards") nav("/boards");
+          if (tab === "new-board") nav("/boards/new");
+        });
+      });
+
+      /**
+       * ============================
+       * ✅ 4) 상단 익명ID 뱃지
+       * ============================
+       */
+      $("#anonBadge").textContent = `anon: ${anonId.slice(0, 8)}`;
+      $("#copyAnonBtn").addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(anonId);
+          $("#copyAnonBtn").textContent = "복사됨!";
+          setTimeout(() => ($("#copyAnonBtn").textContent = "ID 복사"), 900);
+        } catch {
+          alert("복사 실패. 브라우저 권한을 확인해줘.");
+        }
+      });
+
+      /**
+       * ============================
+       * ✅ 5) 통계
+       * ============================
+       */
+      async function loadStats() {
+        // count는 head:true로 빠르게
+        const boards = await sb
+          .from("boards")
+          .select("id", { count: "exact", head: true });
+        const posts = await sb
+          .from("posts")
+          .select("id", { count: "exact", head: true });
+        const comments = await sb
+          .from("comments")
+          .select("id", { count: "exact", head: true });
+
+        $("#statBoards").textContent = boards.count ?? "-";
+        $("#statPosts").textContent = posts.count ?? "-";
+        $("#statComments").textContent = comments.count ?? "-";
+      }
+
+      /**
+       * ============================
+       * ✅ 6) 데이터 로더
+       * ============================
+       */
+      async function fetchActiveBoards(limit = 30) {
+        const { data, error } = await sb
+          .from("boards")
+          .select(
+            "id, slug, title, description, tags, is_active, last_activity_at, created_at"
+          )
+          .eq("is_active", true)
+          .order("last_activity_at", { ascending: false })
+          .limit(limit);
+        if (error) throw error;
+        return data || [];
+      }
+
+      async function fetchFeed({ limit = 30, boardSlug = null } = {}) {
+        // posts + board join
+        let q = sb
+          .from("posts")
+          .select(
+            "id, body, author_name, anon_id, created_at, comment_count, empathy_count, is_hidden, board:boards(id, slug, title)"
+          )
+          .eq("is_hidden", false)
+          .order("created_at", { ascending: false })
+          .limit(limit);
+
+        if (boardSlug) {
+          // filter by board slug: need inner join filter
+          // Supabase: use foreignTable filter via !inner
+          q = sb
+            .from("posts")
+            .select(
+              "id, body, author_name, anon_id, created_at, comment_count, empathy_count, is_hidden, board:boards!inner(id, slug, title)"
+            )
+            .eq("is_hidden", false)
+            .eq("boards.slug", boardSlug)
+            .order("created_at", { ascending: false })
+            .limit(limit);
+        }
+
+        const { data, error } = await q;
+        if (error) throw error;
+        return data || [];
+      }
+
+      async function fetchPostDetail(postId) {
+        const { data: post, error: e1 } = await sb
+          .from("posts")
+          .select(
+            "id, body, author_name, anon_id, created_at, comment_count, empathy_count, is_hidden, board:boards(id, slug, title)"
+          )
+          .eq("id", postId)
+          .maybeSingle();
+        if (e1) throw e1;
+
+        const { data: comments, error: e2 } = await sb
+          .from("comments")
+          .select("id, body, author_name, anon_id, created_at")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: true });
+        if (e2) throw e2;
+
+        return { post, comments: comments || [] };
+      }
+
+      async function fetchBoardsForSelect() {
+        const { data, error } = await sb
+          .from("boards")
+          .select("id, slug, title, is_active, last_activity_at")
+          .eq("is_active", true)
+          .order("last_activity_at", { ascending: false })
+          .limit(80);
+        if (error) throw error;
+        return data || [];
+      }
+
+      /**
+       * ============================
+       * ✅ 7) UI 컴포넌트
+       * ============================
+       */
+      function cardShell(inner) {
+        return `
+    <div class="glass soft rounded-2xl overflow-hidden">
+      ${inner}
+    </div>
+  `;
+      }
+
+      function postCard(p) {
+        const board = p.board || {};
+        const nick = p.author_name || "익명";
+        const ago = timeAgo(p.created_at);
+        const short = (p.body || "").trim();
+        const preview = short.length > 220 ? short.slice(0, 220) + "…" : short;
+
+        return `
+    <article class="glass rounded-2xl border border-white/10 hover:border-white/15 soft overflow-hidden">
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10">${esc(
+                nick
+              )}</span>
+              <span>·</span>
+              <span>${esc(ago)}</span>
+              <span class="hidden sm:inline">·</span>
+              <a class="tap hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10"
+                 href="#/g/${esc(board.slug || "")}">
+                📌 <span class="truncate max-w-[220px]">${esc(
+                  board.title || "판"
+                )}</span>
+              </a>
+            </div>
+
+            <a href="#/p/${esc(p.id)}" class="tap block mt-3">
+              <p class="text-base leading-relaxed whitespace-pre-wrap">${esc(
+                preview
+              )}</p>
+            </a>
+          </div>
+
+          <img src="${seedImg((board.slug || "board") + "-" + p.id)}"
+               alt="post image"
+               class="hidden sm:block w-28 h-20 rounded-xl object-cover border border-white/10 opacity-95" />
+        </div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button class="tap empathyBtn px-3 py-2 rounded-xl bg-rose-400/10 border border-rose-300/20 hover:bg-rose-400/15 text-sm"
+                  data-post="${esc(p.id)}">
+            🔥 공감 <span class="opacity-80">(${Number(
+              p.empathy_count || 0
+            )})</span>
+          </button>
+
+          <a href="#/p/${esc(
+            p.id
+          )}" class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm">
+            💬 댓글 <span class="opacity-80">(${Number(
+              p.comment_count || 0
+            )})</span>
+          </a>
+
+          <a href="#/g/${esc(
+            board.slug || ""
+          )}" class="tap px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm">
+            🧩 판으로
+          </a>
+
+          <button class="tap reportBtn ml-auto px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm"
+                  data-type="post" data-id="${esc(p.id)}">
+            🚫 신고
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
+      }
+
+      function boardPill(b) {
+        const ago = timeAgo(b.last_activity_at);
+        return `
+    <a href="#/g/${esc(
+      b.slug
+    )}" class="tap block rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 p-4">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h4 class="font-extrabold text-base truncate">${esc(b.title)}</h4>
+            <span class="text-xs text-slate-400">· ${esc(ago)}</span>
+          </div>
+          <p class="mt-1 text-sm text-slate-300 line-clamp-2">${esc(
+            b.description || ""
+          )}</p>
+          <div class="mt-2 flex flex-wrap gap-1">
+            ${(b.tags || [])
+              .slice(0, 6)
+              .map(
+                (t) =>
+                  `<span class="text-xs px-2 py-1 rounded-full bg-white/5 border border-white/10">${esc(
+                    t
+                  )}</span>`
+              )
+              .join("")}
+          </div>
+        </div>
+        <img src="${seedImg("board-" + b.slug)}" alt="board image"
+             class="w-20 h-16 rounded-xl object-cover border border-white/10 opacity-95" />
+      </div>
+      <div class="mt-3 text-xs text-slate-500">#${esc(b.slug)}</div>
+    </a>
+  `;
+      }
+
+      /**
+       * ============================
+       * ✅ 8) 액션(공감/신고/작성)
+       * ============================
+       */
+      async function doEmpathy(postId) {
+        // 1인 1회: empathy 테이블 unique(post_id, anon_id)
+        const { error } = await sb
+          .from("empathy")
+          .insert({ post_id: postId, anon_id: anonId });
+        if (error) {
+          // 이미 공감했거나 제약 위반
+          if (
+            String(error.message || "")
+              .toLowerCase()
+              .includes("duplicate")
+          ) {
+            toast("이미 공감했어 👀");
+            return;
+          }
+          toast("공감 실패: " + (error.message || "unknown"));
+          return;
+        }
+        toast("공감 +1 🔥");
+        await render(); // 간단히 전체 리렌더
+      }
+
+      async function doReport(targetType, targetId) {
+        const reason = prompt("신고 사유(선택, 200자 이내):", "");
+        const payload = {
+          target_type: targetType,
+          target_id: targetId,
+          anon_id: anonId,
+          reason: (reason || "").slice(0, 200),
+        };
+        const { error } = await sb.from("reports").insert(payload);
+        if (error) {
+          if (
+            String(error.message || "")
+              .toLowerCase()
+              .includes("duplicate")
+          ) {
+            toast("이미 신고했어.");
+            return;
+          }
+          toast("신고 실패: " + (error.message || "unknown"));
+          return;
+        }
+        toast("신고 완료. 고마워 🙏");
+      }
+
+      async function createBoard({ slug, title, description, tags }) {
+        const { error } = await sb.from("boards").insert({
+          slug,
+          title,
+          description,
+          tags,
+        });
+        if (error) throw error;
+      }
+
+      async function createPost({ boardId, body, authorName }) {
+        const { error } = await sb.from("posts").insert({
+          board_id: boardId,
+          body,
+          author_name: authorName || "익명",
+          anon_id: anonId,
+        });
+        if (error) throw error;
+      }
+
+      async function createComment({ postId, body, authorName }) {
+        const { error } = await sb.from("comments").insert({
+          post_id: postId,
+          body,
+          author_name: authorName || "익명",
+          anon_id: anonId,
+        });
+        if (error) throw error;
+      }
+
+      /**
+       * ============================
+       * ✅ 9) 토스트
+       * ============================
+       */
+      let toastTimer = null;
+      function toast(msg) {
+        let el = document.getElementById("toast");
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "toast";
+          el.className =
+            "fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] px-4 py-3 rounded-2xl bg-black/60 border border-white/10 backdrop-blur-xl text-sm soft";
+          document.body.appendChild(el);
+        }
+        el.textContent = msg;
+        el.style.display = "block";
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => (el.style.display = "none"), 1400);
+      }
+
+      /**
+       * ============================
+       * ✅ 10) 뷰 렌더
+       * ============================
+       */
+      function skeletonList(n = 6) {
+        return `
+    <div class="space-y-3">
+      ${Array.from({ length: n })
+        .map(
+          () => `
+        <div class="glass rounded-2xl border border-white/10 p-4 skeleton">
+          <div class="h-3 w-40 bg-white/10 rounded"></div>
+          <div class="mt-3 h-4 w-full bg-white/10 rounded"></div>
+          <div class="mt-2 h-4 w-5/6 bg-white/10 rounded"></div>
+          <div class="mt-4 h-9 w-44 bg-white/10 rounded-xl"></div>
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+      }
+
+      async function renderHome() {
+        viewEl.innerHTML = `
+    <section class="mt-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-extrabold">🏠 피드</h2>
+        <div class="flex items-center gap-2">
+          <button id="openBoardsQuick" class="tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15">살아있는 판</button>
+          <button id="openComposeQuick" class="tap text-sm px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25">글쓰기</button>
+        </div>
+      </div>
+
+      <div class="mt-3 glass rounded-2xl p-4 border border-white/10">
+        <p class="text-sm text-slate-300">
+          최신 글이 흐르는 곳. <span class="text-slate-100 font-semibold">판(주제)</span>을 눌러 더 깊게 들어가.
+        </p>
+      </div>
+
+      <div id="feedList" class="mt-4 space-y-3">
+        ${skeletonList(7)}
+      </div>
+    </section>
+  `;
+
+        $("#openComposeQuick").addEventListener("click", openCompose);
+        $("#openBoardsQuick").addEventListener("click", () => nav("/boards"));
+
+        const feed = await fetchFeed({ limit: 30 });
+        const list = feed.length
+          ? feed.map(postCard).join("")
+          : cardShell(`<div class="p-6 text-center">
+        <p class="text-slate-300">아직 글이 없어. 첫 글을 남겨볼래?</p>
+        <button class="tap mt-4 px-4 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold" onclick="document.getElementById('openComposeBtn').click()">✍️ 첫 글 쓰기</button>
+      </div>`);
+
+        $("#feedList").innerHTML = list;
+
+        bindPostActions();
+      }
+
+      async function renderBoards() {
+        viewEl.innerHTML = `
+    <section class="mt-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-extrabold">🧩 살아있는 판</h2>
+        <button class="tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15" onclick="location.hash='#/boards/new'">➕ 판 만들기</button>
+      </div>
+
+      <div class="mt-3 glass rounded-2xl p-4 border border-white/10">
+        <p class="text-sm text-slate-300">
+          최근 24시간 동안 움직인 판만 보여. (무활동 판은 자동으로 숨김)
+        </p>
+      </div>
+
+      <div id="boardsGrid" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        ${Array.from({ length: 6 })
+          .map(
+            () =>
+              `<div class="glass rounded-2xl border border-white/10 p-4 skeleton h-28"></div>`
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+
+        const boards = await fetchActiveBoards(40);
+        $("#boardsGrid").innerHTML = boards.length
+          ? boards.map(boardPill).join("")
+          : cardShell(`<div class="p-6 text-center">
+        <p class="text-slate-300">살아있는 판이 아직 없어. 첫 판을 만들자.</p>
+        <a href="#/boards/new" class="tap inline-flex mt-4 px-4 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 font-bold">➕ 판 만들기</a>
+      </div>`);
+      }
+
+      async function renderNewBoard() {
+        viewEl.innerHTML = `
+    <section class="mt-4">
+      <h2 class="text-lg font-extrabold">➕ 판 만들기</h2>
+
+      <div class="mt-3 glass rounded-2xl p-4 border border-white/10">
+        <p class="text-sm text-slate-300">
+          판은 “주제”다. 사람 중심이 아니라, 생각이 모이는 곳.
+        </p>
+        <p class="mt-2 text-xs text-slate-500">
+          slug는 영문/숫자/하이픈만(2~40). 예: <span class="text-slate-300">bitcoin-sin</span>
+        </p>
+      </div>
+
+      <form id="boardForm" class="mt-4 glass rounded-2xl p-4 border border-white/10 space-y-3">
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-slate-400">판 이름</span>
+            <input id="bTitle" required maxlength="40" placeholder="예: 비트코인 안 산 죄"
+                   class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40" />
+          </label>
+
+          <label class="block">
+            <span class="text-xs text-slate-400">slug (URL)</span>
+            <input id="bSlug" required maxlength="40" placeholder="예: bitcoin-sin"
+                   class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40" />
+          </label>
+        </div>
+
+        <label class="block">
+          <span class="text-xs text-slate-400">설명</span>
+          <input id="bDesc" maxlength="160" placeholder="한 줄 소개"
+                 class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40" />
+        </label>
+
+        <label class="block">
+          <span class="text-xs text-slate-400">태그 (쉼표로 구분)</span>
+          <input id="bTags" maxlength="120" placeholder="예: money, regret, meme"
+                 class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40" />
+          <p class="mt-1 text-xs text-slate-500">태그는 영어로 추천(검색/정렬에 좋음)</p>
+        </label>
+
+        <div class="flex items-center justify-end gap-2">
+          <a href="#/boards" class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15">취소</a>
+          <button class="tap px-4 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold" type="submit">생성</button>
+        </div>
+
+        <p id="boardErr" class="hidden text-xs text-rose-300"></p>
+      </form>
+    </section>
+  `;
+
+        const form = $("#boardForm");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const title = $("#bTitle").value.trim();
+          const slug = $("#bSlug").value.trim().toLowerCase();
+          const description = $("#bDesc").value.trim();
+          const tags = $("#bTags")
+            .value.split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .slice(0, 12);
+
+          $("#boardErr").classList.add("hidden");
+          try {
+            if (!/^[a-z0-9-]{2,40}$/.test(slug)) {
+              throw new Error(
+                "slug 형식이 올바르지 않아. 영문/숫자/하이픈만(2~40)"
+              );
+            }
+            await createBoard({ slug, title, description, tags });
+            toast("판 생성 완료 ✅");
+            nav(`/g/${slug}`);
+          } catch (err) {
+            $("#boardErr").textContent = err?.message || String(err);
+            $("#boardErr").classList.remove("hidden");
+          }
+        });
+      }
+
+      async function renderBoard(slug) {
+        viewEl.innerHTML = `
+    <section class="mt-4">
+      <div class="glass rounded-2xl p-4 border border-white/10 soft">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div class="text-xs text-slate-400">판</div>
+            <h2 id="boardTitle" class="text-xl font-extrabold">${esc(slug)}</h2>
+            <p id="boardDesc" class="mt-1 text-sm text-slate-300">불러오는 중...</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button class="tap px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25" id="composeInBoard">✍️ 이 판에 글쓰기</button>
+            <a href="#/boards" class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15">다른 판</a>
+          </div>
+        </div>
+      </div>
+
+      <div id="boardFeed" class="mt-4 space-y-3">${skeletonList(6)}</div>
+    </section>
+  `;
+
+        $("#composeInBoard").addEventListener("click", async () => {
+          await openCompose(slug);
+        });
+
+        // board info
+        const { data: b, error: e1 } = await sb
+          .from("boards")
+          .select(
+            "id, slug, title, description, tags, is_active, last_activity_at"
+          )
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (e1) {
+          $("#boardDesc").textContent = "판 정보를 불러오지 못했어.";
+        } else if (!b) {
+          viewEl.innerHTML = cardShell(`
+      <div class="p-6 text-center">
+        <p class="text-slate-300">이 판은 아직 없어. 만들래?</p>
+        <div class="mt-4 flex justify-center gap-2">
+          <a href="#/boards/new" class="tap px-4 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 font-bold">➕ 판 만들기</a>
+          <a href="#/" class="tap px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10">피드로</a>
+        </div>
+      </div>
+    `);
+          return;
+        } else {
+          $("#boardTitle").textContent = b.title;
+          $("#boardDesc").textContent = b.description || "";
+        }
+
+        const feed = await fetchFeed({ limit: 30, boardSlug: slug });
+        $("#boardFeed").innerHTML = feed.length
+          ? feed.map(postCard).join("")
+          : cardShell(`
+    <div class="p-6 text-center">
+      <p class="text-slate-300">아직 이 판에 글이 없어. 첫 글을 남겨줘.</p>
+      <button class="tap mt-4 px-4 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold" onclick="document.getElementById('composeInBoard').click()">✍️ 첫 글 쓰기</button>
+    </div>
+  `);
+
+        bindPostActions();
+      }
+
+      async function renderPost(postId) {
+        viewEl.innerHTML = `
+    <section class="mt-4">
+      <div class="glass rounded-2xl p-4 border border-white/10 soft">
+        <div id="postWrap">${skeletonList(1)}</div>
+      </div>
+      <div id="commentsWrap" class="mt-4">${skeletonList(4)}</div>
+    </section>
+  `;
+
+        const { post, comments } = await fetchPostDetail(postId);
+        if (!post) {
+          viewEl.innerHTML = cardShell(
+            `<div class="p-6 text-center text-slate-300">글을 찾을 수 없어.</div>`
+          );
+          return;
+        }
+
+        const board = post.board || {};
+        const nick = post.author_name || "익명";
+
+        $("#postWrap").innerHTML = `
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+          <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10">${esc(
+            nick
+          )}</span>
+          <span>·</span>
+          <span>${esc(timeAgo(post.created_at))}</span>
+          <span class="hidden sm:inline">·</span>
+          <a class="tap hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10"
+             href="#/g/${esc(board.slug || "")}">
+            📌 <span class="truncate max-w-[220px]">${esc(
+              board.title || "판"
+            )}</span>
+          </a>
+        </div>
+        <div class="mt-3 text-base leading-relaxed whitespace-pre-wrap">${esc(
+          post.body
+        )}</div>
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <button class="tap empathyBtn px-3 py-2 rounded-xl bg-rose-400/10 border border-rose-300/20 hover:bg-rose-400/15 text-sm"
+                  data-post="${esc(post.id)}">
+            🔥 공감 <span class="opacity-80">(${Number(
+              post.empathy_count || 0
+            )})</span>
+          </button>
+
+          <a href="#/g/${esc(
+            board.slug || ""
+          )}" class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm">
+            🧩 판으로
+          </a>
+
+          <button class="tap reportBtn ml-auto px-3 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm"
+                  data-type="post" data-id="${esc(post.id)}">
+            🚫 신고
+          </button>
+        </div>
+      </div>
+
+      <img src="${seedImg(
+        (board.slug || "board") + "-" + post.id
+      )}" alt="post image"
+           class="hidden sm:block w-40 h-28 rounded-2xl object-cover border border-white/10 opacity-95" />
+    </div>
+  `;
+
+        bindPostActions();
+
+        $("#commentsWrap").innerHTML = `
+    <div class="glass rounded-2xl p-4 border border-white/10 soft">
+      <div class="flex items-center justify-between">
+        <h3 class="font-extrabold">💬 댓글</h3>
+        <span class="text-xs text-slate-400">${comments.length}개</span>
+      </div>
+
+      <form id="commentForm" class="mt-3 grid gap-2">
+        <div class="grid sm:grid-cols-2 gap-2">
+          <input id="cName" maxlength="20" placeholder="닉네임(선택)"
+                 value="${esc(getLastName())}"
+                 class="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40" />
+          <div class="flex gap-2">
+            <button type="button" id="cRefresh" class="tap flex-1 px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm">새로고침</button>
+            <button type="submit" id="cSubmit" class="tap flex-1 px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold text-sm">등록</button>
+          </div>
+        </div>
+
+        <textarea id="cBody" rows="3" maxlength="2000" placeholder="한 줄 던져…"
+                  class="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"></textarea>
+        <div class="flex justify-between text-xs text-slate-500">
+          <span id="cHint">쿨타임: 댓글 8초</span>
+          <span id="cCount">0/2000</span>
+        </div>
+
+        <p id="cErr" class="hidden text-xs text-rose-300"></p>
+      </form>
+
+      <div class="mt-4 space-y-2" id="commentList">
+        ${
+          comments.length
+            ? comments
+                .map(
+                  (c) => `
+              <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10">${esc(
+                      c.author_name || "익명"
+                    )}</span>
+                    <span>·</span>
+                    <span>${esc(timeAgo(c.created_at))}</span>
+                  </div>
+                  <button class="tap reportBtn px-2 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/15"
+                          data-type="comment" data-id="${esc(
+                            c.id
+                          )}">신고</button>
+                </div>
+                <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap">${esc(
+                  c.body
+                )}</div>
+              </div>
+            `
+                )
+                .join("")
+            : `<div class="text-sm text-slate-400 text-center py-6">첫 댓글을 남겨줘.</div>`
+        }
+      </div>
+    </div>
+  `;
+
+        // comment counter
+        const cBody = $("#cBody");
+        const cCount = $("#cCount");
+        const cHint = $("#cHint");
+        const cErr = $("#cErr");
+
+        function updateCCount() {
+          cCount.textContent = `${(cBody.value || "").length}/2000`;
+          const left = msLeft(LS_COOLDOWN_COMMENT);
+          cHint.textContent =
+            left > 0
+              ? `쿨타임 ${Math.ceil(left / 1000)}초 남음`
+              : "쿨타임: 댓글 8초";
+        }
+        cBody.addEventListener("input", updateCCount);
+        updateCCount();
+
+        $("#cRefresh").addEventListener("click", () => render());
+        $("#commentForm").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          cErr.classList.add("hidden");
+
+          const name = ($("#cName").value || "").trim().slice(0, 20) || "익명";
+          const body = (cBody.value || "").trim();
+
+          try {
+            if (!body) throw new Error("댓글 내용을 입력해줘.");
+            if (inCooldown(LS_COOLDOWN_COMMENT, 8000)) {
+              const left = Math.ceil(msLeft(LS_COOLDOWN_COMMENT) / 1000);
+              throw new Error(`잠깐만… 댓글 쿨타임 ${left}초 남았어.`);
+            }
+            setCooldown(LS_COOLDOWN_COMMENT, 8000);
+            setLastName(name);
+
+            await createComment({ postId: post.id, body, authorName: name });
+            toast("댓글 등록 ✅");
+            render();
+          } catch (err) {
+            cErr.textContent = err?.message || String(err);
+            cErr.classList.remove("hidden");
+          }
+        });
+
+        // bind report buttons in comments
+        document.querySelectorAll(".reportBtn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const t = btn.dataset.type;
+            const id = btn.dataset.id;
+            await doReport(t, id);
+          });
+        });
+      }
+
+      function bindPostActions() {
+        document.querySelectorAll(".empathyBtn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const postId = btn.dataset.post;
+            await doEmpathy(postId);
+          });
+        });
+
+        document.querySelectorAll(".reportBtn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const t = btn.dataset.type;
+            const id = btn.dataset.id;
+            await doReport(t, id);
+          });
+        });
+      }
+
+      /**
+       * ============================
+       * ✅ 11) 글쓰기 모달
+       * ============================
+       */
+      const composeModal = $("#composeModal");
+      const composeBoardSel = $("#composeBoard");
+      const composeName = $("#composeName");
+      const composeBody = $("#composeBody");
+      const composeCount = $("#composeCount");
+      const composeHint = $("#composeHint");
+      const composeError = $("#composeError");
+
+      function openCompose(preselectSlug = null) {
+        composeError.classList.add("hidden");
+        composeName.value = getLastName();
+        composeBody.value = "";
+        composeCount.textContent = "0/8000";
+
+        composeModal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+        loadComposeBoards(preselectSlug);
+        updateComposeHint();
+      }
+      function closeCompose() {
+        composeModal.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+      function updateComposeHint() {
+        const left = msLeft(LS_COOLDOWN_POST);
+        composeHint.textContent =
+          left > 0
+            ? `쿨타임 ${Math.ceil(left / 1000)}초 남음`
+            : "쿨타임: 글 20초";
+      }
+
+      async function loadComposeBoards(preselectSlug) {
+        composeBoardSel.innerHTML = `<option value="">불러오는 중...</option>`;
+        try {
+          const boards = await fetchBoardsForSelect();
+          if (!boards.length) {
+            composeBoardSel.innerHTML = `<option value="">판이 없어. 먼저 판을 만들어줘.</option>`;
+            return;
+          }
+          composeBoardSel.innerHTML = boards
+            .map((b) => {
+              const selected =
+                preselectSlug && b.slug === preselectSlug ? "selected" : "";
+              return `<option value="${esc(b.id)}" data-slug="${esc(
+                b.slug
+              )}" ${selected}>${esc(b.title)} (#${esc(b.slug)})</option>`;
+            })
+            .join("");
+        } catch (err) {
+          composeBoardSel.innerHTML = `<option value="">불러오기 실패</option>`;
+        }
+      }
+
+      $("#openComposeBtn").addEventListener("click", () => openCompose());
+      $("#closeComposeBtn").addEventListener("click", closeCompose);
+      composeModal.addEventListener("click", (e) => {
+        if (e.target === composeModal) closeCompose();
+        if (
+          e.target?.classList?.contains("absolute") &&
+          e.target?.classList?.contains("inset-0")
+        )
+          closeCompose();
+      });
+
+      $("#goNewBoardBtn").addEventListener("click", () => {
+        closeCompose();
+        nav("/boards/new");
+      });
+
+      composeBody.addEventListener("input", () => {
+        composeCount.textContent = `${(composeBody.value || "").length}/8000`;
+      });
+
+      $("#submitPostBtn").addEventListener("click", async () => {
+        composeError.classList.add("hidden");
+        try {
+          const boardId = composeBoardSel.value;
+          const name = (composeName.value || "").trim().slice(0, 20) || "익명";
+          const body = (composeBody.value || "").trim();
+
+          if (!boardId) throw new Error("판을 선택해줘.");
+          if (!body) throw new Error("본문을 입력해줘.");
+
+          if (inCooldown(LS_COOLDOWN_POST, 20000)) {
+            const left = Math.ceil(msLeft(LS_COOLDOWN_POST) / 1000);
+            throw new Error(`잠깐만… 글 쿨타임 ${left}초 남았어.`);
+          }
+          setCooldown(LS_COOLDOWN_POST, 20000);
+          setLastName(name);
+
+          await createPost({ boardId, body, authorName: name });
+          toast("게시 완료 ✅");
+
+          // 선택된 판 slug로 이동
+          const opt = composeBoardSel.querySelector(
+            `option[value="${CSS.escape(boardId)}"]`
+          );
+          const slug = opt?.dataset?.slug;
+          closeCompose();
+          nav(slug ? `/g/${slug}` : "/");
+        } catch (err) {
+          composeError.textContent = err?.message || String(err);
+          composeError.classList.remove("hidden");
+        } finally {
+          updateComposeHint();
+        }
+      });
+
+      /**
+       * ============================
+       * ✅ 12) 메인 렌더러
+       * ============================
+       */
+      async function render() {
+        updateComposeHint();
+        await loadStats();
+
+        const parts = parseHash();
+        // routes:
+        // #/                 => home
+        // #/boards           => list active boards
+        // #/boards/new       => create board
+        // #/g/:slug          => board view
+        // #/p/:id            => post detail
+
+        try {
+          if (!parts.length) return renderHome();
+
+          if (parts[0] === "boards" && parts[1] === "new")
+            return renderNewBoard();
+          if (parts[0] === "boards") return renderBoards();
+
+          if (parts[0] === "g" && parts[1]) return renderBoard(parts[1]);
+          if (parts[0] === "p" && parts[1]) return renderPost(parts[1]);
+
+          // fallback
+          return renderHome();
+        } catch (err) {
+          viewEl.innerHTML = cardShell(`
+      <div class="p-6">
+        <h3 class="font-extrabold text-lg">에러</h3>
+        <p class="mt-2 text-sm text-slate-300">데이터를 불러오다가 문제가 생겼어.</p>
+        <pre class="mt-3 text-xs text-rose-200 whitespace-pre-wrap bg-black/30 border border-white/10 rounded-2xl p-3 overflow-auto">${esc(
+          err?.message || String(err)
+        )}</pre>
+        <div class="mt-4 flex gap-2">
+          <button class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15" onclick="location.hash='#/'">피드로</button>
+          <button class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15" onclick="location.reload()">새로고침</button>
+        </div>
+      </div>
+    `);
+        }
+      }
+
+      window.addEventListener("hashchange", render);
+      render();
+
+      /**
+       * ============================
+       * ✅ 13) (옵션) 판 자동 비활성화 안내
+       * ============================
+       * Supabase에서 스케줄(예: 30분~1시간마다)로 아래 SQL을 실행하면 “죽은 판 숨김”이 완성됨.
+       *
+       * update public.boards
+       * set is_active = false
+       * where last_activity_at < now() - interval '24 hours';
+       */
+    </script>
+  </body>
+</html>
