@@ -8,11 +8,11 @@
     <!-- ✅ SEO / OG / Twitter / Canonical (도메인만 교체) -->
     <meta
       name="description"
-      content="Threads처럼 가볍게 쓰고, DC처럼 주제로 모인다. 익명 피드 + 판(갤러리) 하이브리드."
+      content="스쳐가는 말이, 주제가 된다. 익명 피드 커뮤니티 Flow"
     />
     <meta
       name="keywords"
-      content="익명 커뮤니티, 게시판, 갤러리, 스레드, 피드, DC, Threads, 익명 글, 익명 댓글"
+      content="익명 커뮤니티, 게시판, 갤러리, 스레드, 피드, DC, Threads, 익명 글, 익명 댓글, Flow"
     />
     <meta name="author" content="FunnyFunny" />
     <link rel="canonical" href="https://your-domain.example/" />
@@ -20,21 +20,21 @@
     <meta property="og:title" content="Flow — 글은 흐르고, 판은 남는다" />
     <meta
       property="og:description"
-      content="익명 피드 + 주제형 판(갤러리). 살아있는 판만 뜬다."
+      content="스쳐가는 말이, 주제가 된다. 익명 피드 커뮤니티 Flow"
     />
     <!-- ✅ OG 이미지는 dummyimage.com 사용(요청 메모 반영) -->
     <meta
       property="og:image"
-      content="https://dummyimage.com/1200x630/0b1220/ffffff&text=PANFEED"
+      content="https://dummyimage.com/1200x630/0b1220/ffffff&text=FLOW"
     />
-    <meta property="og:image:alt" content="PANFEED" />
+    <meta property="og:image:alt" content="FLOW" />
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Flow — 글은 흐르고, 판은 남는다" />
     <meta
       name="twitter:description"
-      content="익명 피드 + 주제형 판(갤러리). 살아있는 판만 뜬다."
+      content="스쳐가는 말이, 주제가 된다. 익명 피드 커뮤니티 Flow"
     />
     <meta
       name="twitter:image"
@@ -96,6 +96,14 @@
           opacity: 0.8;
         }
       }
+      .modal-overlay {
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(6px);
+      }
+      .modal-card {
+        background: rgba(5, 8, 20, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
     </style>
   </head>
 
@@ -150,7 +158,7 @@
             <div>
               <p class="text-sm text-slate-300">글은 흐르고, 판은 남는다</p>
               <h1 class="text-xl font-extrabold tracking-tight">
-                Threads 감성 + DC 판 문화
+                Flow - 스쳐가는 말이, 주제가 된다.
               </h1>
             </div>
             <div class="hidden sm:flex items-center gap-2">
@@ -247,11 +255,13 @@
 
     <!-- Compose Modal -->
     <div id="composeModal" class="fixed inset-0 z-50 hidden">
-      <div class="absolute inset-0 bg-black/60"></div>
+      <div class="absolute inset-0 modal-overlay"></div>
       <div
         class="absolute inset-0 flex items-end sm:items-center justify-center p-4"
       >
-        <div class="glass soft w-full max-w-2xl rounded-2xl overflow-hidden">
+        <div
+          class="glass soft modal-card w-full max-w-2xl rounded-2xl overflow-hidden"
+        >
           <div
             class="p-4 border-b border-white/10 flex items-center justify-between"
           >
