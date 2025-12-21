@@ -549,6 +549,9 @@
       }
 
       async function fetchPostDetail(postId) {
+        if (!postId) {
+          throw new Error("글 ID가 필요해.");
+        }
         const { data: post, error: e1 } = await sb
           .from("posts")
           .select(
@@ -636,9 +639,7 @@
                   data-post="${esc(p.id)}">
             🔥 공감 <span class="opacity-80" data-empathy-count="${esc(
               p.id
-            )}">(${Number(
-              p.empathy_count || 0
-            )})</span>
+            )}">(${Number(p.empathy_count || 0)})</span>
           </button>
 
           <a href="#/p/${esc(
@@ -785,13 +786,25 @@
       }
 
       async function createComment({ postId, body, authorName }) {
+        if (!postId) {
+          throw new Error("글 ID가 없어. 새로고침해줘.");
+        }
         const { error } = await sb.from("comments").insert({
           post_id: postId,
           content: body,
           author_name: authorName || "익명",
           anon_id: anonId,
         });
-        if (error) throw error;
+        if (error) {
+          // 외래 키 제약 위반 에러를 더 명확하게 처리
+          if (
+            error.message &&
+            error.message.includes("foreign key constraint")
+          ) {
+            throw new Error("글을 찾을 수 없어. 새로고침해줘.");
+          }
+          throw error;
+        }
       }
 
       /**
@@ -1060,6 +1073,13 @@
       }
 
       async function renderPost(postId) {
+        if (!postId) {
+          viewEl.innerHTML = cardShell(
+            `<div class="p-6 text-center text-slate-300">글 ID가 없어.</div>`
+          );
+          return;
+        }
+
         viewEl.innerHTML = `
     <section class="mt-4">
       <div class="glass rounded-2xl p-4 border border-white/10 soft">
@@ -1124,9 +1144,7 @@
                   data-post="${esc(post.id)}">
             🔥 공감 <span class="opacity-80" data-empathy-count="${esc(
               post.id
-            )}">(${Number(
-              post.empathy_count || 0
-            )})</span>
+            )}">(${Number(post.empathy_count || 0)})</span>
           </button>
 
           <a href="#/g/${esc(
@@ -1242,6 +1260,9 @@
             if (inCooldown(LS_COOLDOWN_COMMENT, 8000)) {
               const left = Math.ceil(msLeft(LS_COOLDOWN_COMMENT) / 1000);
               throw new Error(`잠깐만… 댓글 쿨타임 ${left}초 남았어.`);
+            }
+            if (!post || !post.id) {
+              throw new Error("글 정보를 불러올 수 없어. 새로고침해줘.");
             }
             setCooldown(LS_COOLDOWN_COMMENT, 8000);
             setLastName(name);
