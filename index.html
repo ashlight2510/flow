@@ -560,7 +560,7 @@
 
         const { data: comments, error: e2 } = await sb
           .from("comments")
-          .select("id, body, author_name, anon_id, created_at")
+          .select("id, body:content, author_name, anon_id, created_at")
           .eq("post_id", postId)
           .order("created_at", { ascending: true });
         if (e2) throw e2;
@@ -772,7 +772,7 @@
       async function createComment({ postId, body, authorName }) {
         const { error } = await sb.from("comments").insert({
           post_id: postId,
-          body,
+          content: body,
           author_name: authorName || "익명",
           anon_id: anonId,
         });
