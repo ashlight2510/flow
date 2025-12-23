@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Flow — 글은 흐르고, 판은 남는다</title>
+    <title>Flow — 흘린 말 하나가, 스토리가 되는 곳</title>
 
     <!-- ✅ SEO / OG / Twitter / Canonical (도메인만 교체) -->
     <meta
       name="description"
-      content="스쳐가는 말이, 주제가 된다. 익명 피드 커뮤니티 Flow"
+      content="흘린 말 하나가, 스토리가 되는 곳 — Flow 익명 커뮤니티"
     />
     <meta
       name="keywords"
@@ -31,7 +31,10 @@
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Flow — 글은 흐르고, 판은 남는다" />
+    <meta
+      name="twitter:title"
+      content="Flow — 흘린 말 하나가, 스토리가 되는 곳"
+    />
     <meta
       name="twitter:description"
       content="스쳐가는 말이, 주제가 된다. 익명 피드 커뮤니티 Flow"
@@ -121,7 +124,7 @@
           <span class="text-lg">Flow</span>
           <span
             class="text-xs font-semibold px-2 py-1 rounded-full bg-white/10 border border-white/10"
-            >익명</span
+            >BETA</span
           >
         </a>
 
@@ -156,9 +159,11 @@
         <div class="glass soft rounded-2xl p-4 flex-1">
           <div class="flex items-center justify-between gap-4">
             <div>
-              <p class="text-sm text-slate-300">글은 흐르고, 판은 남는다</p>
+              <p class="text-sm text-slate-300">
+                흘린 말 하나가, 스토리가 되는 곳
+              </p>
               <h1 class="text-xl font-extrabold tracking-tight">
-                Flow - 스쳐가는 말이, 주제가 된다.
+                Flow - 익명커뮤니티
               </h1>
             </div>
             <div class="hidden sm:flex items-center gap-2">
@@ -707,18 +712,28 @@
        * ============================
        */
       async function refreshEmpathyCount(postId) {
+        if (!postId) return;
         const escaped = CSS?.escape?.(postId) || postId;
-        const { count, error } = await sb
-          .from("empathy")
-          .select("id", { count: "exact", head: true })
-          .eq("post_id", postId);
-        if (error) return;
-        document
-          .querySelectorAll(`[data-empathy-count="${escaped}"]`)
-          .forEach((el) => (el.textContent = `(${count ?? 0})`));
+        try {
+          const { count, error } = await sb
+            .from("empathy")
+            .select("id", { count: "exact", head: true })
+            .eq("post_id", postId);
+          if (error) {
+            console.error("공감 수 조회 실패:", error);
+            return;
+          }
+          const countValue = count ?? 0;
+          document
+            .querySelectorAll(`[data-empathy-count="${escaped}"]`)
+            .forEach((el) => (el.textContent = `(${countValue})`));
+        } catch (err) {
+          console.error("공감 수 조회 중 오류:", err);
+        }
       }
 
       async function doEmpathy(postId) {
+        if (!postId) return;
         // 1인 1회: empathy 테이블 unique(post_id, anon_id)
         const { error } = await sb
           .from("empathy")
@@ -726,9 +741,15 @@
         if (error) {
           // 이미 공감했거나 제약 위반
           if (
+            error.code === "23505" ||
+            error.code === "PGRST116" ||
+            error.status === 409 ||
             String(error.message || "")
               .toLowerCase()
-              .includes("duplicate")
+              .includes("duplicate") ||
+            String(error.message || "")
+              .toLowerCase()
+              .includes("unique constraint")
           ) {
             toast("이미 공감했어 👀");
             await refreshEmpathyCount(postId);
@@ -789,22 +810,193 @@
         if (!postId) {
           throw new Error("글 ID가 없어. 새로고침해줘.");
         }
-        const { error } = await sb.from("comments").insert({
-          post_id: postId,
-          content: body,
-          author_name: authorName || "익명",
-          anon_id: anonId,
+
+        // postId를 문자열로 명시적으로 변환 (UUID 형식 유지)
+        const normalizedPostId = String(postId).trim();
+
+        // 디버깅: postId 값 확인
+        console.log("댓글 작성 시도 - postId:", {
+          original: postId,
+          normalized: normalizedPostId,
+          type: typeof postId,
+          normalizedType: typeof normalizedPostId,
         });
-        if (error) {
-          // 외래 키 제약 위반 에러를 더 명확하게 처리
-          if (
-            error.message &&
-            error.message.includes("foreign key constraint")
-          ) {
-            throw new Error("글을 찾을 수 없어. 새로고침해줘.");
-          }
-          throw error;
+
+        // 먼저 postId가 실제로 존재하는지 확인
+        const { data: postExists, error: checkError } = await sb
+          .from("posts")
+          .select("id, is_hidden")
+          .eq("id", normalizedPostId)
+          .maybeSingle();
+
+        console.log("postId 존재 사전 확인:", {
+          postExists,
+          checkError,
+          exists: !!postExists,
+        });
+
+        if (checkError) {
+          console.error("postId 확인 중 에러:", checkError);
+          throw new Error(
+            `글을 확인하는 중 오류가 발생했어. (${
+              checkError.message || "알 수 없는 오류"
+            })`
+          );
         }
+
+        if (!postExists) {
+          throw new Error(`글을 찾을 수 없어. 새로고침 해줘.`);
+        }
+
+        if (postExists.is_hidden) {
+          throw new Error("이 글은 숨겨진 글이라 댓글을 달 수 없어.");
+        }
+
+        // postId 확인 성공 로그
+        console.log("postId 확인 성공:", {
+          postId: normalizedPostId,
+          isHidden: postExists.is_hidden,
+        });
+
+        const { data, error } = await sb
+          .from("comments")
+          .insert({
+            post_id: normalizedPostId,
+            content: body,
+            author_name: authorName || "익명",
+            anon_id: anonId,
+          })
+          .select();
+        if (error) {
+          // 전체 에러 객체 로깅
+          console.error("댓글 작성 에러 상세:", {
+            error,
+            errorString: JSON.stringify(error, null, 2),
+            postId: normalizedPostId,
+            status: error.status,
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            // Supabase 에러의 모든 속성 확인
+            allKeys: Object.keys(error),
+          });
+
+          const errorMsg = (error.message || "").toLowerCase();
+          const errorCode = error.code;
+          const errorDetails = error.details || "";
+          const errorHint = error.hint || "";
+
+          // 외래 키 제약 위반 에러 처리 (에러 코드 23503) - 최우선 처리
+          if (
+            errorCode === "23503" ||
+            errorMsg.includes("foreign key constraint") ||
+            errorMsg.includes("violates foreign key constraint") ||
+            errorMsg.includes("comments_post_id_fkey")
+          ) {
+            // postId는 이미 존재 확인했지만, RLS 정책 문제일 수 있음
+            // 에러 details에 "Key is not present in table"이 있으면 RLS 정책 문제
+            console.error("외래 키 제약 위반 발생:", {
+              postId: normalizedPostId,
+              postExists: true, // 이미 확인함
+              errorDetails,
+              errorHint,
+              possibleCause:
+                "RLS 정책 문제 - comments 테이블 INSERT 시 posts 테이블 참조 권한 없음",
+            });
+
+            // RLS 정책 문제일 가능성이 높음
+            // comments 테이블 INSERT 시 posts 테이블의 해당 행을 참조할 수 있는 권한이 없음
+            if (errorDetails.includes("Key is not present in table")) {
+              const rlsGuide = `
+RLS 정책 설정 가이드 (Supabase SQL Editor에서 실행):
+
+-- 1단계: 기존 정책 삭제 (있는 경우)
+DROP POLICY IF EXISTS "Allow anon to insert comments" ON comments;
+DROP POLICY IF EXISTS "Allow anon to select posts" ON posts;
+
+-- 2단계: posts 테이블 SELECT 정책 생성 (외래 키 검증에 필요)
+CREATE POLICY "Allow anon to select posts"
+ON posts FOR SELECT
+TO anon
+USING (true);
+
+-- 3단계: comments 테이블 INSERT 정책 생성
+-- WITH CHECK에서 posts 테이블을 참조할 수 있도록 설정
+CREATE POLICY "Allow anon to insert comments"
+ON comments FOR INSERT
+TO anon
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM posts 
+    WHERE posts.id = comments.post_id
+  )
+);
+
+-- 또는 더 간단하게 (모든 댓글 허용):
+-- CREATE POLICY "Allow anon to insert comments"
+-- ON comments FOR INSERT
+-- TO anon
+-- WITH CHECK (true);
+
+-- 4단계: 정책 확인
+SELECT * FROM pg_policies WHERE tablename = 'comments';
+SELECT * FROM pg_policies WHERE tablename = 'posts';
+`;
+              console.error("RLS 정책 설정 가이드:", rlsGuide);
+              console.error(
+                "관리자용: Supabase 대시보드 → SQL Editor에서 위 SQL을 실행하세요."
+              );
+
+              // 사용자에게는 간단한 메시지만 표시
+              throw new Error(
+                `글을 찾을 수 없어. 새로고침 해줘. (데이터베이스 설정 문제일 수 있어)`
+              );
+            }
+
+            // 일반적인 외래 키 제약 위반
+            throw new Error(`글을 찾을 수 없어. 새로고침 해줘.`);
+          }
+
+          // 중복 제약 조건 위반 (Unique constraint violation) - 에러 코드 23505
+          if (
+            errorCode === "23505" ||
+            errorCode === "PGRST116" ||
+            errorMsg.includes("duplicate") ||
+            errorMsg.includes("unique constraint") ||
+            errorMsg.includes("violates unique constraint")
+          ) {
+            throw new Error("중복된 요청이야. 잠시 후 다시 시도해줘.");
+          }
+
+          // 409 Conflict HTTP 상태 코드 처리
+          // Supabase는 일부 제약 조건 위반을 409로 반환할 수 있음
+          if (error.status === 409 || errorCode === "409") {
+            // 에러 메시지에 따라 구체적인 안내
+            if (
+              errorMsg.includes("foreign key") ||
+              errorDetails.includes("Key is not present in table")
+            ) {
+              // RLS 정책 문제 또는 외래 키 제약 위반
+              // postId 확인은 성공했지만 INSERT 시점에 실패
+              throw new Error(
+                `글을 찾을 수 없어. 새로고침 해줘. (RLS 정책 또는 외래 키 제약 문제일 수 있어)`
+              );
+            }
+            if (errorMsg.includes("duplicate") || errorMsg.includes("unique")) {
+              throw new Error("중복된 요청이야. 잠시 후 다시 시도해줘.");
+            }
+            // 일반적인 409 에러 - 글 정보가 최신이 아닐 수 있음
+            throw new Error(`글을 찾을 수 없어. 새로고침 해줘.`);
+          }
+
+          // 기타 에러 - 원본 메시지 포함
+          const userMessage = error.message || "댓글 작성에 실패했어.";
+          throw new Error(
+            `${userMessage} (에러 코드: ${errorCode || "알 수 없음"})`
+          );
+        }
+        return data;
       }
 
       /**
@@ -1110,7 +1302,13 @@
         }
         if (!post) {
           viewEl.innerHTML = cardShell(
-            `<div class="p-6 text-center text-slate-300">글을 찾을 수 없어.</div>`
+            `<div class="p-6 text-center">
+              <p class="text-slate-300 mb-4">글을 찾을 수 없어. 새로고침 해줘.</p>
+              <div class="flex gap-2 justify-center">
+                <button class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15" onclick="location.hash='#/'">피드로</button>
+                <button class="tap px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25" onclick="location.reload()">새로고침</button>
+              </div>
+            </div>`
           );
           return;
         }
@@ -1168,6 +1366,10 @@
   `;
 
         bindPostActions();
+        // 공감 수 초기 로드 시 새로고침
+        if (post && post.id) {
+          refreshEmpathyCount(post.id).catch(() => {});
+        }
 
         $("#commentsWrap").innerHTML = `
     <div class="glass rounded-2xl p-4 border border-white/10 soft">
@@ -1236,6 +1438,18 @@
         const cHint = $("#cHint");
         const cErr = $("#cErr");
 
+        // postId를 안전하게 저장 (클로저 문제 방지)
+        // post.id가 올바른 형식인지 확인
+        const currentPostId = post.id;
+        const currentPost = post;
+
+        console.log("renderPost - post 객체:", {
+          post,
+          postId: post.id,
+          postIdType: typeof post.id,
+          postIdString: String(post.id),
+        });
+
         function updateCCount() {
           cCount.textContent = `${(cBody.value || "").length}/2000`;
           const left = msLeft(LS_COOLDOWN_COMMENT);
@@ -1252,8 +1466,12 @@
           e.preventDefault();
           cErr.classList.add("hidden");
 
+          const submitBtn = $("#cSubmit");
           const name = ($("#cName").value || "").trim().slice(0, 20) || "익명";
           const body = (cBody.value || "").trim();
+
+          // 중복 제출 방지
+          if (submitBtn.disabled) return;
 
           try {
             if (!body) throw new Error("댓글 내용을 입력해줘.");
@@ -1261,18 +1479,61 @@
               const left = Math.ceil(msLeft(LS_COOLDOWN_COMMENT) / 1000);
               throw new Error(`잠깐만… 댓글 쿨타임 ${left}초 남았어.`);
             }
-            if (!post || !post.id) {
+
+            // 저장된 postId 사용
+            if (!currentPostId) {
+              console.error("postId 확인:", {
+                currentPostId,
+                currentPost,
+                postId,
+                post,
+              });
               throw new Error("글 정보를 불러올 수 없어. 새로고침해줘.");
             }
+
+            console.log(
+              "댓글 제출 - postId:",
+              currentPostId,
+              "post 객체:",
+              currentPost
+            );
+
+            // 버튼 비활성화
+            submitBtn.disabled = true;
+            submitBtn.textContent = "등록 중...";
+
             setCooldown(LS_COOLDOWN_COMMENT, 8000);
             setLastName(name);
 
-            await createComment({ postId: post.id, body, authorName: name });
+            await createComment({
+              postId: currentPostId,
+              body,
+              authorName: name,
+            });
             toast("댓글 등록 ✅");
             render();
           } catch (err) {
-            cErr.textContent = err?.message || String(err);
+            console.error("댓글 제출 에러:", err);
+            const errorMessage = err?.message || String(err);
             cErr.classList.remove("hidden");
+
+            // "글을 찾을 수 없어" 또는 "새로고침" 메시지가 포함된 경우
+            // 새로고침 버튼과 함께 표시
+            if (
+              errorMessage.includes("새로고침") ||
+              errorMessage.includes("글을 찾을 수 없어")
+            ) {
+              cErr.innerHTML = `
+                <span>${esc(errorMessage)}</span>
+                <button class="tap ml-2 px-2 py-1 rounded-lg bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 text-xs" onclick="location.reload()">새로고침</button>
+              `;
+            } else {
+              cErr.textContent = errorMessage;
+            }
+
+            // 버튼 다시 활성화
+            submitBtn.disabled = false;
+            submitBtn.textContent = "등록";
           }
         });
 
@@ -1288,8 +1549,12 @@
 
       function bindPostActions() {
         document.querySelectorAll(".empathyBtn").forEach((btn) => {
+          const postId = btn.dataset.post;
+          if (postId) {
+            // 초기 로드 시 공감 수 새로고침 (비동기, 에러 무시)
+            refreshEmpathyCount(postId).catch(() => {});
+          }
           btn.addEventListener("click", async () => {
-            const postId = btn.dataset.post;
             await doEmpathy(postId);
           });
         });
