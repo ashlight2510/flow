@@ -1943,7 +1943,7 @@ SELECT * FROM pg_policies WHERE tablename = 'posts' AND cmd = 'SELECT';
         };
 
         const supportedLangs = ["ko", "en"];
-        const defaultLang = "en";
+        const defaultLang = "ko";
         const storageKey = "flow_lang";
         const canonicalBase = "https://flow.funnyfunny.cloud/";
         const keywordsByLang = {
@@ -1952,22 +1952,6 @@ SELECT * FROM pg_policies WHERE tablename = 'posts' AND cmd = 'SELECT';
         };
         let currentLang = defaultLang;
 
-        function getRegionPreferredLang(fallback = defaultLang) {
-          const intlLocale =
-            typeof Intl === "object" && typeof Intl.DateTimeFormat === "function"
-              ? Intl.DateTimeFormat().resolvedOptions().locale
-              : "";
-          const sources = [
-            ...(navigator.languages || []),
-            navigator.language,
-            navigator.userLanguage,
-            intlLocale,
-          ]
-            .filter(Boolean)
-            .map((locale) => locale.toLowerCase());
-          const hasKorean = sources.some((locale) => locale.startsWith("ko"));
-          return hasKorean ? "ko" : fallback;
-        }
 
         function getTranslation(key) {
           return (
@@ -2034,8 +2018,14 @@ SELECT * FROM pg_policies WHERE tablename = 'posts' AND cmd = 'SELECT';
           if (supportedLangs.includes(param)) return param;
           const stored = localStorage.getItem(storageKey);
           if (supportedLangs.includes(stored)) return stored;
-          const candidate = getRegionPreferredLang(defaultLang);
-          return supportedLangs.includes(candidate) ? candidate : defaultLang;
+          const browserLang =
+            navigator.languages && navigator.languages.length
+              ? navigator.languages[0]
+              : navigator.language;
+          if (browserLang && browserLang.toLowerCase().startsWith("ko")) {
+            return "ko";
+          }
+          return defaultLang;
         }
 
         window.flowTranslate = {
