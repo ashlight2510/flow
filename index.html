@@ -108,6 +108,32 @@
         border: 1px solid rgba(255, 255, 255, 0.16);
       }
     </style>
+    <style>
+      .lang-switch {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .lang-switch button {
+        border: none;
+        background: transparent;
+        color: rgba(248, 250, 252, 0.7);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .lang-switch button.active {
+        background: rgba(255, 255, 255, 0.25);
+        color: #0b1120;
+      }
+    </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1204894220949193"
      crossorigin="anonymous"></script>
     <!-- responsive-base -->
@@ -175,16 +201,21 @@
             rel="noopener noreferrer"
             class="tap hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
           >
-            <span>다른 서비스 보기</span>
+            <span data-i18n="moreServices">다른 서비스 보기</span>
             <span class="opacity-70">↗</span>
           </a>
 
           <button
             id="openComposeBtn"
             class="tap inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25"
+            data-i18n="writeButton"
           >
             ✍️ 글쓰기
           </button>
+          <div class="lang-switch" role="tablist" aria-label="Language switcher">
+            <button type="button" data-lang="ko" class="active">한국어</button>
+            <button type="button" data-lang="en">English</button>
+          </div>
         </div>
       </div>
     </header>
@@ -192,22 +223,22 @@
     <main class="max-w-5xl mx-auto px-4 py-6">
       <!-- Status row -->
       <section class="flex flex-col sm:flex-row gap-3 items-stretch">
-        <div class="glass soft rounded-2xl p-4 flex-1">
-          <div class="flex items-center justify-between gap-4">
-            <div>
-              <p class="text-sm text-slate-300">
-                흘린 말 하나가, 스토리가 되는 곳
-              </p>
-              <h1 class="text-xl font-extrabold tracking-tight">
-                Flow - 익명커뮤니티
-              </h1>
-            </div>
-            <div class="hidden sm:flex items-center gap-2">
-              <span
-                id="anonBadge"
-                class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10"
-                >anon: -</span
-              >
+          <div class="glass soft rounded-2xl p-4 flex-1">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="text-sm text-slate-300" data-i18n="tagline">
+                  흘린 말 하나가, 스토리가 되는 곳
+                </p>
+                <h1 class="text-xl font-extrabold tracking-tight" data-i18n="heroTitle">
+                  Flow - 익명커뮤니티
+                </h1>
+              </div>
+              <div class="hidden sm:flex items-center gap-2">
+            <span
+              id="anonBadge"
+              class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10"
+              >anon: -</span
+            >
               <button
                 id="copyAnonBtn"
                 class="tap text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/15"
@@ -218,36 +249,39 @@
           </div>
 
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              data-tab="home"
-              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
-            >
-              🏠 피드
-            </button>
-            <button
-              data-tab="boards"
-              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
-            >
-              🧩 살아있는 판
-            </button>
-            <button
-              data-tab="new-board"
-              class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
-            >
-              ➕ 판 만들기
-            </button>
+              <button
+                data-tab="home"
+                class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+                data-i18n="tabFeed"
+              >
+                🏠 피드
+              </button>
+              <button
+                data-tab="boards"
+                class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+                data-i18n="tabBoards"
+              >
+                🧩 살아있는 판
+              </button>
+              <button
+                data-tab="new-board"
+                class="tabBtn tap text-sm px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+                data-i18n="tabNewBoard"
+              >
+                ➕ 판 만들기
+              </button>
+            </div>
+
+            <p class="mt-3 text-xs text-slate-400 leading-relaxed">
+              ✅ 계정 없음 · 익명 · 주제(판) 중심 · 24시간 무활동 판은 숨김(운영
+              정책에 따라 조정).
+            </p>
           </div>
 
-          <p class="mt-3 text-xs text-slate-400 leading-relaxed">
-            ✅ 계정 없음 · 익명 · 주제(판) 중심 · 24시간 무활동 판은 숨김(운영
-            정책에 따라 조정).
-          </p>
-        </div>
-
         <!-- Right info card -->
-        <div class="glass soft rounded-2xl p-4 sm:w-[320px]">
-          <div class="flex items-center justify-between">
-            <p class="text-sm text-slate-300">오늘의 흐름</p>
+          <div class="glass soft rounded-2xl p-4 sm:w-[320px]">
+            <div class="flex items-center justify-between">
+            <p class="text-sm text-slate-300" data-i18n="statusTitle">오늘의 흐름</p>
             <!-- <span
               class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/10"
               >MVP</span
@@ -256,20 +290,22 @@
           <div class="mt-3 grid grid-cols-3 gap-2 text-center">
             <div class="rounded-xl bg-white/5 border border-white/10 p-2">
               <div id="statBoards" class="text-lg font-extrabold">-</div>
-              <div class="text-xs text-slate-400">판</div>
+              <div class="text-xs text-slate-400" data-i18n="statBoardsLabel">판</div>
             </div>
             <div class="rounded-xl bg-white/5 border border-white/10 p-2">
               <div id="statPosts" class="text-lg font-extrabold">-</div>
-              <div class="text-xs text-slate-400">글</div>
+              <div class="text-xs text-slate-400" data-i18n="statPostsLabel">글</div>
             </div>
             <div class="rounded-xl bg-white/5 border border-white/10 p-2">
               <div id="statComments" class="text-lg font-extrabold">-</div>
-              <div class="text-xs text-slate-400">댓글</div>
+              <div class="text-xs text-slate-400" data-i18n="statCommentsLabel">댓글</div>
             </div>
           </div>
 
           <div class="mt-3 text-xs text-slate-400">
-            <p class="leading-relaxed">글을 쓰면 생각이 정리 돼</p>
+            <p class="leading-relaxed" data-i18n="statusTagline">
+              글을 쓰면 생각이 정리 돼
+            </p>
           </div>
         </div>
       </section>
@@ -292,35 +328,41 @@
         <div
           class="glass soft modal-card w-full max-w-2xl rounded-2xl overflow-hidden"
         >
-          <div
-            class="p-4 border-b border-white/10 flex items-center justify-between"
-          >
-            <div>
-              <h3 class="text-lg font-extrabold">✍️ 글쓰기</h3>
-              <p class="text-xs text-slate-400">판을 고르고, 한 번에 툭.</p>
-            </div>
-            <button
-              id="closeComposeBtn"
-              class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+            <div
+              class="p-4 border-b border-white/10 flex items-center justify-between"
             >
-              닫기
-            </button>
-          </div>
+              <div>
+              <h3 class="text-lg font-extrabold" data-i18n="composeTitle">
+                ✍️ 글쓰기
+              </h3>
+              <p class="text-xs text-slate-400" data-i18n="composeSubtitle">
+                판을 고르고, 한 번에 툭.
+              </p>
+              </div>
+              <button
+                id="closeComposeBtn"
+                class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+                data-i18n="closeCompose"
+              >
+                닫기
+              </button>
+            </div>
 
           <div class="p-4 space-y-3">
             <div class="grid sm:grid-cols-2 gap-3">
               <label class="block">
-                <span class="text-xs text-slate-400">닉네임(선택)</span>
+                <span class="text-xs text-slate-400" data-i18n="composeLabelName">닉네임(선택)</span>
                 <input
                   id="composeName"
                   maxlength="20"
                   placeholder="익명"
+                  data-i18n-placeholder="placeholderNickname"
                   class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
                 />
               </label>
 
               <label class="block">
-                <span class="text-xs text-slate-400">판 선택</span>
+                <span class="text-xs text-slate-400" data-i18n="composeLabelBoard">판 선택</span>
                 <select
                   id="composeBoard"
                   class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
@@ -331,16 +373,17 @@
             </div>
 
             <label class="block">
-              <span class="text-xs text-slate-400">본문</span>
+              <span class="text-xs text-slate-400" data-i18n="composeLabelBody">본문</span>
               <textarea
                 id="composeBody"
                 rows="5"
                 maxlength="8000"
                 placeholder="요즘 드는 생각 한 줄…"
+                data-i18n-placeholder="placeholderBody"
                 class="mt-1 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 outline-none focus:border-sky-300/40"
               ></textarea>
               <div class="mt-1 flex justify-between text-xs text-slate-500">
-                <span id="composeHint">쿨타임: 글 20초</span>
+                <span id="composeHint" data-i18n="composeHint">쿨타임: 글 20초</span>
                 <span id="composeCount">0/8000</span>
               </div>
             </label>
@@ -349,12 +392,14 @@
               <button
                 id="goNewBoardBtn"
                 class="tap px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15"
+                data-i18n="composeButtonBoard"
               >
                 판 먼저 만들기
               </button>
               <button
                 id="submitPostBtn"
                 class="tap px-4 py-2 rounded-xl bg-sky-400/20 border border-sky-300/30 hover:bg-sky-400/25 font-bold"
+                data-i18n="composeButtonSubmit"
               >
                 게시
               </button>
@@ -366,6 +411,7 @@
       </div>
     </div>
 
+    <script src="/seo-helper.js"></script>
     <script>
       /**
        * ============================
@@ -1840,6 +1886,183 @@ SELECT * FROM pg_policies WHERE tablename = 'posts' AND cmd = 'SELECT';
        * set is_active = false
        * where last_activity_at < now() - interval '24 hours';
        */
+    </script>
+    <script>
+      (function () {
+        const translations = {
+          ko: {
+            tagline: "흘린 말 하나가, 스토리가 되는 곳",
+            heroTitle: "Flow - 익명커뮤니티",
+            moreServices: "다른 서비스 보기",
+            writeButton: "✍️ 글쓰기",
+            tabFeed: "🏠 피드",
+            tabBoards: "🧩 살아있는 판",
+            tabNewBoard: "➕ 판 만들기",
+            statusTitle: "오늘의 흐름",
+            statusTagline: "글을 쓰면 생각이 정리 돼",
+            statBoardsLabel: "판",
+            statPostsLabel: "글",
+            statCommentsLabel: "댓글",
+            composeTitle: "✍️ 글쓰기",
+            composeSubtitle: "판을 고르고, 한 번에 툭.",
+            closeCompose: "닫기",
+            composeLabelName: "닉네임(선택)",
+            composeLabelBoard: "판 선택",
+            composeLabelBody: "본문",
+            composeHint: "쿨타임: 글 20초",
+            composeButtonBoard: "판 먼저 만들기",
+            composeButtonSubmit: "게시",
+            placeholderNickname: "익명",
+            placeholderBody: "요즘 드는 생각 한 줄…",
+          },
+          en: {
+            tagline: "Flow — where every dropped word becomes a story",
+            heroTitle: "Flow — Anonymous Community",
+            moreServices: "See other services",
+            writeButton: "✍️ Write",
+            tabFeed: "🏠 Feed",
+            tabBoards: "🧩 Active Boards",
+            tabNewBoard: "➕ Create Board",
+            statusTitle: "Today's Flow",
+            statusTagline: "Writing clears your mind",
+            statBoardsLabel: "Boards",
+            statPostsLabel: "Posts",
+            statCommentsLabel: "Comments",
+            composeTitle: "✍️ Compose",
+            composeSubtitle: "Pick a board and drop a thought.",
+            closeCompose: "Close",
+            composeLabelName: "Nickname (optional)",
+            composeLabelBoard: "Select board",
+            composeLabelBody: "Body",
+            composeHint: "Cooldown: 20s per post",
+            composeButtonBoard: "Create board first",
+            composeButtonSubmit: "Post",
+            placeholderNickname: "Anonymous",
+            placeholderBody: "Share a thought in one line…",
+          },
+        };
+
+        const supportedLangs = ["ko", "en"];
+        const defaultLang = "en";
+        const storageKey = "flow_lang";
+        const canonicalBase = "https://flow.funnyfunny.cloud/";
+        const keywordsByLang = {
+          ko: "Flow, 익명커뮤니티, 게시판, fun community",
+          en: "Flow anonymous community, realtime boards, share thoughts",
+        };
+        let currentLang = defaultLang;
+
+        function getRegionPreferredLang(fallback = defaultLang) {
+          const intlLocale =
+            typeof Intl === "object" && typeof Intl.DateTimeFormat === "function"
+              ? Intl.DateTimeFormat().resolvedOptions().locale
+              : "";
+          const sources = [
+            ...(navigator.languages || []),
+            navigator.language,
+            navigator.userLanguage,
+            intlLocale,
+          ]
+            .filter(Boolean)
+            .map((locale) => locale.toLowerCase());
+          const hasKorean = sources.some((locale) => locale.startsWith("ko"));
+          return hasKorean ? "ko" : fallback;
+        }
+
+        function getTranslation(key) {
+          return (
+            (translations[currentLang] && translations[currentLang][key]) ??
+            translations.ko[key] ??
+            ""
+          );
+        }
+
+        function applyTranslations(lang) {
+          const nextLang = supportedLangs.includes(lang) ? lang : defaultLang;
+          currentLang = nextLang;
+          document.documentElement.lang = currentLang;
+
+          document.querySelectorAll("[data-i18n]").forEach((el) => {
+            const key = el.getAttribute("data-i18n");
+            if (!key) return;
+            const value = getTranslation(key);
+            if (value) {
+              el.textContent = value;
+            }
+          });
+
+          document
+            .querySelectorAll("[data-i18n-placeholder]")
+            .forEach((el) => {
+              const key = el.getAttribute("data-i18n-placeholder");
+              if (!key) return;
+              const value = getTranslation(key);
+              if (value) {
+                el.setAttribute("placeholder", value);
+              }
+            });
+
+          document.querySelectorAll(".lang-switch button").forEach((btn) => {
+            const isActive = btn.dataset.lang === currentLang;
+            btn.classList.toggle("active", isActive);
+          });
+          SeoHelper.applySeoSettings({
+            lang: currentLang,
+            keywordsByLang,
+            supportedLangs,
+            defaultLang,
+            canonicalBase,
+          });
+        }
+
+        function setLang(lang, { persist = true, updateUrl = true } = {}) {
+          const next = supportedLangs.includes(lang) ? lang : defaultLang;
+          if (persist) {
+            localStorage.setItem(storageKey, next);
+          }
+          if (updateUrl) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("lang", next);
+            window.history.replaceState({}, "", url.toString());
+          }
+          applyTranslations(next);
+        }
+
+        function detectLang() {
+          const url = new URL(window.location.href);
+          const param = url.searchParams.get("lang");
+          if (supportedLangs.includes(param)) return param;
+          const stored = localStorage.getItem(storageKey);
+          if (supportedLangs.includes(stored)) return stored;
+          const candidate = getRegionPreferredLang(defaultLang);
+          return supportedLangs.includes(candidate) ? candidate : defaultLang;
+        }
+
+        window.flowTranslate = {
+          t: (key) => getTranslation(key),
+          setLang,
+          detectLang,
+        };
+
+        function initLangSwitcher() {
+          document.querySelectorAll(".lang-switch button").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              setLang(btn.dataset.lang, { persist: true, updateUrl: true });
+            });
+          });
+        }
+
+        function setup() {
+          initLangSwitcher();
+          setLang(detectLang(), { persist: true, updateUrl: false });
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", setup);
+        } else {
+          setup();
+        }
+      })();
     </script>
   
 <ins class="adsbygoogle"
